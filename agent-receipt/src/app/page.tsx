@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { AlertCircle, Terminal, File, RefreshCw, Send, CheckCircle2, RotateCcw, XCircle, ChevronRight, Check } from "lucide-react";
+import { AlertCircle, Terminal, File, RefreshCw, Send, RotateCcw, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type ActionStatus = "pending" | "success" | "failed" | "reversed";
@@ -26,6 +26,7 @@ export default function AgentReceipt() {
     "production.config": '{\n  "imports": ["config/legacy.json"]\n}',
   });
   
+  const [selectedFile, setSelectedFile] = useState<{ name: string; content: string } | null>(null);
   const eventsEndRef = useRef<HTMLDivElement>(null);
 
   const isDependencyBroken = !virtualFiles["config/legacy.json"];
@@ -141,6 +142,47 @@ export default function AgentReceipt() {
 
   return (
     <div className="min-h-screen bg-[#0f1115] text-slate-200 font-sans p-6 grid grid-cols-12 gap-6">
+
+      {/* File Viewer Modal */}
+      <AnimatePresence>
+        {selectedFile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
+            onClick={() => setSelectedFile(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#181a1f] border border-[#2a2d36] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2d36] bg-black/30">
+                <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm">
+                  <File size={15} />
+                  {selectedFile.name}
+                </div>
+                <button
+                  onClick={() => setSelectedFile(null)}
+                  className="text-slate-500 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              {/* Modal Body */}
+              <div className="p-5 overflow-auto max-h-[60vh]">
+                <pre className="text-sm text-slate-200 font-mono whitespace-pre-wrap leading-relaxed">
+                  {selectedFile.content}
+                </pre>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* LEFT PANEL: Virtual Workspace */}
       <div className="col-span-12 md:col-span-3 flex flex-col gap-4">
@@ -165,11 +207,15 @@ export default function AgentReceipt() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  key={filename} 
-                  className="bg-[#21242c] p-3 rounded-lg border border-[#2a2d36] text-sm group"
+                  key={filename}
+                  onClick={() => setSelectedFile({ name: filename, content })}
+                  className="bg-[#21242c] p-3 rounded-lg border border-[#2a2d36] text-sm group cursor-pointer hover:border-emerald-500/40 hover:bg-[#252830] transition-colors"
                 >
-                  <div className="flex items-center gap-2 text-emerald-400 font-mono mb-1">
-                    <File size={14} /> {filename}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-400 font-mono mb-1">
+                      <File size={14} /> {filename}
+                    </div>
+                    <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">click to open</span>
                   </div>
                   <div className="text-xs text-slate-500 font-mono truncate opacity-60">
                     {content.substring(0, 30)}...
